@@ -175,6 +175,42 @@ uniform_crossover() {
 	echo
 }
 
+partial_crossover() {
+	local cross_idx
+	local chA_byte
+	local chB_byte
+	chA=$1
+	chB=$2
+	child1=$3
+	child2=$4
+
+	cross_idx=$(((RANDOM % MAX_CHROMOSOME_LEN) + 1))
+
+	echo '>>>>>>>>>>>> Partial crossover'
+	echo "chA=$chA"
+	echo "chB=$chB"
+	echo "child1=$child1"
+	echo "child2=$child2"
+	echo "cross_idx=$cross_idx"
+
+	rm -f $child1 $child2
+
+	for ch_idx in $(seq ${MAX_CHROMOSOME_LEN}); do
+		chA_byte=$(xxd -g1 -c1 -p $chA | sed -n "${ch_idx}p")
+		chB_byte=$(xxd -g1 -c1 -p $chB | sed -n "${ch_idx}p")
+		if [ $ch_idx -eq $cross_idx ]; then
+			echo -en "\x${chA_byte}" >> $child2
+			echo -en "\x${chB_byte}" >> $child1
+		else
+			echo -en "\x${chA_byte}" >> $child1
+			echo -en "\x${chB_byte}" >> $child2
+		fi
+	done
+	echo -en '\x55\xaa' >> $child1
+	echo -en '\x55\xaa' >> $child2
+	echo
+}
+
 selection() {
 	local i
 
@@ -229,7 +265,7 @@ selection() {
 		chB=${WORK_DIR}/now/$(sed -n ${chB_idx}p ${WORK_DIR}/now/evaluation_value_list.csv | cut -d',' -f1)
 		echo "chA=$chA"
 		echo "chB=$chB"
-		uniform_crossover $chA $chB child$((2 * cross_times)).dat child$(((2 * cross_times) + 1)).dat
+		partial_crossover $chA $chB child$((2 * cross_times)).dat child$(((2 * cross_times) + 1)).dat
 
 		echo
 	done
