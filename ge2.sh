@@ -66,10 +66,7 @@ evaluation() {
 			;;
 		*)
 			evaluation_value=0
-			rm $ch
 			echo "$ch is dead."
-			generate $ch
-			echo "$ch has been reborn."
 			;;
 		esac
 
@@ -187,6 +184,21 @@ selection() {
 	candidates_num=$((POPULATION_SIZE / 2))
 	mutation_num=$((POPULATION_SIZE / 5))
 	top_num=$((POPULATION_SIZE - (candidates_num + mutation_num)))
+
+	# 淘汰
+	# evaluation_value=0の個体を一番良い個体で置き換える
+	echo ">>>>>>> To be culled"
+	top_ch=$(awk -F',' '{print $1;exit}' ${WORK_DIR}/now/evaluation_value_list.csv)
+	echo "top_ch:${WORK_DIR}/now/${top_ch}"
+	for i in $(awk -F',' '$2==0{print $1}' ${WORK_DIR}/now/evaluation_value_list.csv); do
+		mkdir -p ${WORK_DIR}/${age}_culled
+		mv ${WORK_DIR}/now/${i} ${WORK_DIR}/${age}_culled/
+		echo "save $i to ${WORK_DIR}/${age}_culled/"
+		cp ${WORK_DIR}/now/${top_ch} ${WORK_DIR}/now/$i
+		echo "replace ${WORK_DIR}/now/$i with ${WORK_DIR}/now/${top_ch}"
+	done
+
+	echo
 
 	# (個体数 - (残した子孫の数 + 突然変異数))分の個体を、上位から順にnextへコピー
 	echo ">>>>>>> Copy Top ${top_num}"
