@@ -52,17 +52,13 @@ evaluation() {
 		echo ">>>>> $ch"
 
 		cp $ch floppy.img
-		$MBR_TESTER
+		cp $ch hdd.img
+		pixel_num=$($MBR_TESTER | grep '^pixel_num=' | cut -d'=' -f2)
 		exit_code=$?
 		case $exit_code in
 		0)
-			evaluation_value=100
-			echo "$ch has reached the answer!"
-			rm -f enable_ge
-			;;
-		1)
-			evaluation_value=1
-			echo "$ch is an ordinary child."
+			evaluation_value=$pixel_num
+			echo "$ch gets pixels."
 			;;
 		*)
 			evaluation_value=0
