@@ -16,8 +16,7 @@ generate() {
 	local i
 
 	file=$1
-	ch_len=${GENE_LEN}
-	for i in $(seq ${ch_len}); do
+	for i in $(seq ${GENE_LEN}); do
 		rnd=$((RANDOM % 256))
 		echo -en "\x$(printf '%02x' $rnd)" >> ${file}.ipl
 	done
@@ -31,9 +30,8 @@ initialization() {
 	echo 'initialization'
 	echo '-------------------------------------------'
 
-	mkdir ${WORK_DIR}
 	echo "WORK_DIR=${WORK_DIR}"
-	mkdir ${WORK_DIR}/{now,next}
+	mkdir -p ${WORK_DIR}/{now,next}
 	for i in $(seq 0 $((POPULATION_SIZE - 1))); do
 		echo "${WORK_DIR}/now/ch_$i.dat"
 		generate "${WORK_DIR}/now/ch_$i.dat"
