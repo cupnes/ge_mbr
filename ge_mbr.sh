@@ -13,13 +13,10 @@ MBR_TESTER=./mbr_tester
 WORK_DIR=$(date '+%Y%m%d%H%M%S')
 
 generate() {
-	local i
+	local file
 
 	file=$1
-	for i in $(seq ${GENE_LEN}); do
-		rnd=$((RANDOM % 256))
-		echo -en "\x$(printf '%02x' $rnd)" >> ${file}.ipl
-	done
+	dd if=/dev/urandom of=${file}.ipl bs=1 count=${GENE_LEN}
 	cat ${file}.ipl mbr_partition_tbl_boot_sig.dat > $file
 	rm -f ${file}.ipl
 }
