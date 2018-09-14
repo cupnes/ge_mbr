@@ -2,21 +2,22 @@
 
 # set -eux
 
-. ./env.sh
-
-ALLENE_SIZE=256
+# POPULATION_SIZEは、
+# - 2で2回割っても余りが出ない
+# - 5で1回割っても余りが出ない
+# を共に満たす値であること
+# すなわち、20の倍数
+POPULATION_SIZE=20
+GENE_LEN=446
+MBR_TESTER=./mbr_tester
 WORK_DIR=$(date '+%Y%m%d%H%M%S')
 
 generate() {
-	local i
+	local file
 
 	file=$1
-	ch_len=${MAX_CHROMOSOME_LEN}
-	for i in $(seq ${ch_len}); do
-		rnd=$((RANDOM % ALLENE_SIZE))
-		echo -en "\x$(printf '%02x' $rnd)" >> $file
-	done
-	echo -en '\x55\xaa' >> $file
+	dd if=/dev/urandom of=$file bs=1 count=$GENE_LEN
+	cat mbr_partition_tbl_boot_sig.dat >> $file
 }
 
 initialization() {
@@ -25,9 +26,8 @@ initialization() {
 	echo 'initialization'
 	echo '-------------------------------------------'
 
-	mkdir ${WORK_DIR}
 	echo "WORK_DIR=${WORK_DIR}"
-	mkdir ${WORK_DIR}/{now,next}
+	mkdir -p ${WORK_DIR}/{now,next}
 	for i in $(seq 0 $((POPULATION_SIZE - 1))); do
 		echo "${WORK_DIR}/now/ch_$i.dat"
 		generate "${WORK_DIR}/now/ch_$i.dat"
@@ -39,7 +39,7 @@ initialization() {
 
 evaluation() {
 	local i
-	local tmp
+	local ch
 
 	echo 'evaluation'
 	echo '-------------------------------------------'
@@ -75,6 +75,8 @@ evaluation() {
 
 	# 第2列で降順にソート
 	sort -n -r -k 2 -t ',' tmp.csv > ${WORK_DIR}/now/evaluation_value_list.csv
+
+	rm -f floppy.img hdd.img tmp.csv
 
 	echo
 	echo
@@ -113,7 +115,7 @@ two_point_crossover() {
 
 	p1=0
 	while [ $p1 -le 2 ]; do
-		p1=$(((RANDOM % MAX_CHROMOSOME_LEN) + 1))
+		p1=$(((RANDOM % GENE_LEN) + 1))
 	done
 	echo "p1=$p1"
 	p2=0
@@ -151,23 +153,23 @@ uniform_crossover() {
 	echo "child1=$child1"
 	echo "child2=$child2"
 
-	rm -f $child1 $child2
+	rm -f ${child1}.ipl ${child2}.ipl $child1 $child2
 
 	# echo -n 'Crossover idx:'
-	for ch_idx in $(seq ${MAX_CHROMOSOME_LEN}); do
+	for ch_idx in $(seq ${GENE_LEN}); do
 		chA_byte=$(xxd -g1 -c1 -p $chA | sed -n "${ch_idx}p")
 		chB_byte=$(xxd -g1 -c1 -p $chB | sed -n "${ch_idx}p")
 		if [ $((RANDOM % 2)) -lt 1 ]; then
 			# echo -n "${ch_idx} "
-			echo -en "\x${chA_byte}" >> $child2
-			echo -en "\x${chB_byte}" >> $child1
+			echo -en "\x${chA_byte}" >> ${child2}.ipl
+			echo -en "\x${chB_byte}" >> ${child1}.ipl
 		else
-			echo -en "\x${chA_byte}" >> $child1
-			echo -en "\x${chB_byte}" >> $child2
+			echo -en "\x${chA_byte}" >> ${child1}.ipl
+			echo -en "\x${chB_byte}" >> ${child2}.ipl
 		fi
 	done
-	echo -en '\x55\xaa' >> $child1
-	echo -en '\x55\xaa' >> $child2
+	cat ${child1}.ipl mbr_partition_tbl_boot_sig.dat > $child1
+	cat ${child2}.ipl mbr_partition_tbl_boot_sig.dat > $child2
 	echo
 }
 
@@ -180,7 +182,7 @@ partial_crossover() {
 	child1=$3
 	child2=$4
 
-	cross_idx=$(((RANDOM % MAX_CHROMOSOME_LEN) + 1))
+	cross_idx=$(((RANDOM % GENE_LEN) + 1))
 
 	echo '>>>>>>>>>>>> Partial crossover'
 	echo "chA=$chA"
@@ -189,28 +191,28 @@ partial_crossover() {
 	echo "child2=$child2"
 	echo "cross_idx=$cross_idx"
 
-	rm -f $child1 $child2
+	rm -f ${child1}.ipl ${child2}.ipl $child1 $child2
 
-	for ch_idx in $(seq ${MAX_CHROMOSOME_LEN}); do
+	for ch_idx in $(seq ${GENE_LEN}); do
 		chA_byte=$(xxd -g1 -c1 -p $chA | sed -n "${ch_idx}p")
 		chB_byte=$(xxd -g1 -c1 -p $chB | sed -n "${ch_idx}p")
 		if [ $ch_idx -eq $cross_idx ]; then
-			echo -en "\x${chA_byte}" >> $child2
-			echo -en "\x${chB_byte}" >> $child1
+			echo -en "\x${chA_byte}" >> ${child2}.ipl
+			echo -en "\x${chB_byte}" >> ${child1}.ipl
 		else
-			echo -en "\x${chA_byte}" >> $child1
-			echo -en "\x${chB_byte}" >> $child2
+			echo -en "\x${chA_byte}" >> ${child1}.ipl
+			echo -en "\x${chB_byte}" >> ${child2}.ipl
 		fi
 	done
-	echo -en '\x55\xaa' >> $child1
-	echo -en '\x55\xaa' >> $child2
+	cat ${child1}.ipl mbr_partition_tbl_boot_sig.dat > $child1
+	cat ${child2}.ipl mbr_partition_tbl_boot_sig.dat > $child2
 	echo
 }
 
-selection() {
+feedback() {
 	local i
 
-	echo 'selection'
+	echo 'feedback'
 	echo '-------------------------------------------'
 
 	candidates_num=$((POPULATION_SIZE / 2))
@@ -280,14 +282,11 @@ selection() {
 
 	# 個体数の20%を突然変異させ、nextへ追加
 	echo '>>>>>>> Mutation'
-	for mutation_cnt in $(seq ${mutation_num}); do
-		for i in $(seq 0 $((POPULATION_SIZE - 1))); do
-			if [ ! -f ${WORK_DIR}/next/ch_$i.dat ]; then
-				generate ${WORK_DIR}/next/ch_$i.dat
-				echo "mutated:${WORK_DIR}/next/ch_$i.dat"
-				break
-			fi
-		done
+	for i in $(seq 0 $((POPULATION_SIZE - 1))); do
+		if [ ! -f ${WORK_DIR}/next/ch_$i.dat ]; then
+			generate ${WORK_DIR}/next/ch_$i.dat
+			echo "mutated:${WORK_DIR}/next/ch_$i.dat"
+		fi
 	done
 
 	echo
@@ -316,7 +315,7 @@ while [ -f enable_ge ]; do
 
 	evaluation
 	# evaluation_test
-	selection
+	feedback
 	mv ${WORK_DIR}/{now,$age}
 	mv ${WORK_DIR}/{next,now}
 	mkdir ${WORK_DIR}/next
@@ -334,7 +333,7 @@ echo '-------------------------------------------'
 
 # # 一様交叉(Uniform Crossover)テストスクリプト
 # rm -f chA.dat chB.dat
-# for ch_idx in $(seq ${MAX_CHROMOSOME_LEN}); do
+# for ch_idx in $(seq ${GENE_LEN}); do
 # 	echo A >> chA.dat
 # 	echo B >> chB.dat
 # done
