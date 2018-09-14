@@ -39,7 +39,7 @@ initialization() {
 
 evaluation() {
 	local i
-	local tmp
+	local ch
 
 	echo 'evaluation'
 	echo '-------------------------------------------'
@@ -79,6 +79,8 @@ evaluation() {
 
 	# 第2列で降順にソート
 	sort -n -r -k 2 -t ',' tmp.csv > ${WORK_DIR}/now/evaluation_value_list.csv
+
+	rm -f floppy.img tmp.csv
 
 	echo
 	echo
