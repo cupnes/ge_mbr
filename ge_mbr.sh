@@ -286,14 +286,11 @@ feedback() {
 
 	# 個体数の20%を突然変異させ、nextへ追加
 	echo '>>>>>>> Mutation'
-	for mutation_cnt in $(seq ${mutation_num}); do
-		for i in $(seq 0 $((POPULATION_SIZE - 1))); do
-			if [ ! -f ${WORK_DIR}/next/ch_$i.dat ]; then
-				generate ${WORK_DIR}/next/ch_$i.dat
-				echo "mutated:${WORK_DIR}/next/ch_$i.dat"
-				break
-			fi
-		done
+	for i in $(seq 0 $((POPULATION_SIZE - 1))); do
+		if [ ! -f ${WORK_DIR}/next/ch_$i.dat ]; then
+			generate ${WORK_DIR}/next/ch_$i.dat
+			echo "mutated:${WORK_DIR}/next/ch_$i.dat"
+		fi
 	done
 
 	echo
