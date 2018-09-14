@@ -8,18 +8,17 @@
 # を共に満たす値であること
 # すなわち、20の倍数
 POPULATION_SIZE=20
-MAX_CHROMOSOME_LEN=510
+GENE_LEN=510
 MBR_TESTER=./mbr_tester
-ALLENE_SIZE=256
 WORK_DIR=$(date '+%Y%m%d%H%M%S')
 
 generate() {
 	local i
 
 	file=$1
-	ch_len=${MAX_CHROMOSOME_LEN}
+	ch_len=${GENE_LEN}
 	for i in $(seq ${ch_len}); do
-		rnd=$((RANDOM % ALLENE_SIZE))
+		rnd=$((RANDOM % 256))
 		echo -en "\x$(printf '%02x' $rnd)" >> $file
 	done
 	echo -en '\x55\xaa' >> $file
@@ -123,7 +122,7 @@ two_point_crossover() {
 
 	p1=0
 	while [ $p1 -le 2 ]; do
-		p1=$(((RANDOM % MAX_CHROMOSOME_LEN) + 1))
+		p1=$(((RANDOM % GENE_LEN) + 1))
 	done
 	echo "p1=$p1"
 	p2=0
@@ -164,7 +163,7 @@ uniform_crossover() {
 	rm -f $child1 $child2
 
 	# echo -n 'Crossover idx:'
-	for ch_idx in $(seq ${MAX_CHROMOSOME_LEN}); do
+	for ch_idx in $(seq ${GENE_LEN}); do
 		chA_byte=$(xxd -g1 -c1 -p $chA | sed -n "${ch_idx}p")
 		chB_byte=$(xxd -g1 -c1 -p $chB | sed -n "${ch_idx}p")
 		if [ $((RANDOM % 2)) -lt 1 ]; then
@@ -190,7 +189,7 @@ partial_crossover() {
 	child1=$3
 	child2=$4
 
-	cross_idx=$(((RANDOM % MAX_CHROMOSOME_LEN) + 1))
+	cross_idx=$(((RANDOM % GENE_LEN) + 1))
 
 	echo '>>>>>>>>>>>> Partial crossover'
 	echo "chA=$chA"
@@ -201,7 +200,7 @@ partial_crossover() {
 
 	rm -f $child1 $child2
 
-	for ch_idx in $(seq ${MAX_CHROMOSOME_LEN}); do
+	for ch_idx in $(seq ${GENE_LEN}); do
 		chA_byte=$(xxd -g1 -c1 -p $chA | sed -n "${ch_idx}p")
 		chB_byte=$(xxd -g1 -c1 -p $chB | sed -n "${ch_idx}p")
 		if [ $ch_idx -eq $cross_idx ]; then
@@ -344,7 +343,7 @@ echo '-------------------------------------------'
 
 # # 一様交叉(Uniform Crossover)テストスクリプト
 # rm -f chA.dat chB.dat
-# for ch_idx in $(seq ${MAX_CHROMOSOME_LEN}); do
+# for ch_idx in $(seq ${GENE_LEN}); do
 # 	echo A >> chA.dat
 # 	echo B >> chB.dat
 # done
