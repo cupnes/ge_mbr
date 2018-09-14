@@ -8,7 +8,7 @@
 # を共に満たす値であること
 # すなわち、20の倍数
 POPULATION_SIZE=20
-GENE_LEN=510
+GENE_LEN=446
 MBR_TESTER=./mbr_tester
 WORK_DIR=$(date '+%Y%m%d%H%M%S')
 
@@ -19,9 +19,10 @@ generate() {
 	ch_len=${GENE_LEN}
 	for i in $(seq ${ch_len}); do
 		rnd=$((RANDOM % 256))
-		echo -en "\x$(printf '%02x' $rnd)" >> $file
+		echo -en "\x$(printf '%02x' $rnd)" >> ${file}.ipl
 	done
-	echo -en '\x55\xaa' >> $file
+	cat ${file}.ipl mbr_partition_tbl_boot_sig.dat > $file
+	rm -f ${file}.ipl
 }
 
 initialization() {
@@ -160,7 +161,7 @@ uniform_crossover() {
 	echo "child1=$child1"
 	echo "child2=$child2"
 
-	rm -f $child1 $child2
+	rm -f ${child1}.ipl ${child2}.ipl $child1 $child2
 
 	# echo -n 'Crossover idx:'
 	for ch_idx in $(seq ${GENE_LEN}); do
@@ -168,15 +169,15 @@ uniform_crossover() {
 		chB_byte=$(xxd -g1 -c1 -p $chB | sed -n "${ch_idx}p")
 		if [ $((RANDOM % 2)) -lt 1 ]; then
 			# echo -n "${ch_idx} "
-			echo -en "\x${chA_byte}" >> $child2
-			echo -en "\x${chB_byte}" >> $child1
+			echo -en "\x${chA_byte}" >> ${child2}.ipl
+			echo -en "\x${chB_byte}" >> ${child1}.ipl
 		else
-			echo -en "\x${chA_byte}" >> $child1
-			echo -en "\x${chB_byte}" >> $child2
+			echo -en "\x${chA_byte}" >> ${child1}.ipl
+			echo -en "\x${chB_byte}" >> ${child2}.ipl
 		fi
 	done
-	echo -en '\x55\xaa' >> $child1
-	echo -en '\x55\xaa' >> $child2
+	cat ${child1}.ipl mbr_partition_tbl_boot_sig.dat > $child1
+	cat ${child2}.ipl mbr_partition_tbl_boot_sig.dat > $child2
 	echo
 }
 
@@ -198,21 +199,21 @@ partial_crossover() {
 	echo "child2=$child2"
 	echo "cross_idx=$cross_idx"
 
-	rm -f $child1 $child2
+	rm -f ${child1}.ipl ${child2}.ipl $child1 $child2
 
 	for ch_idx in $(seq ${GENE_LEN}); do
 		chA_byte=$(xxd -g1 -c1 -p $chA | sed -n "${ch_idx}p")
 		chB_byte=$(xxd -g1 -c1 -p $chB | sed -n "${ch_idx}p")
 		if [ $ch_idx -eq $cross_idx ]; then
-			echo -en "\x${chA_byte}" >> $child2
-			echo -en "\x${chB_byte}" >> $child1
+			echo -en "\x${chA_byte}" >> ${child2}.ipl
+			echo -en "\x${chB_byte}" >> ${child1}.ipl
 		else
-			echo -en "\x${chA_byte}" >> $child1
-			echo -en "\x${chB_byte}" >> $child2
+			echo -en "\x${chA_byte}" >> ${child1}.ipl
+			echo -en "\x${chB_byte}" >> ${child2}.ipl
 		fi
 	done
-	echo -en '\x55\xaa' >> $child1
-	echo -en '\x55\xaa' >> $child2
+	cat ${child1}.ipl mbr_partition_tbl_boot_sig.dat > $child1
+	cat ${child2}.ipl mbr_partition_tbl_boot_sig.dat > $child2
 	echo
 }
 
