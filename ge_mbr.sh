@@ -217,10 +217,10 @@ partial_crossover() {
 	echo
 }
 
-selection() {
+feedback() {
 	local i
 
-	echo 'selection'
+	echo 'feedback'
 	echo '-------------------------------------------'
 
 	candidates_num=$((POPULATION_SIZE / 2))
@@ -326,7 +326,7 @@ while [ -f enable_ge ]; do
 
 	evaluation
 	# evaluation_test
-	selection
+	feedback
 	mv ${WORK_DIR}/{now,$age}
 	mv ${WORK_DIR}/{next,now}
 	mkdir ${WORK_DIR}/next
