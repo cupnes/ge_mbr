@@ -16,9 +16,8 @@ generate() {
 	local file
 
 	file=$1
-	dd if=/dev/urandom of=${file}.ipl bs=1 count=${GENE_LEN}
-	cat ${file}.ipl mbr_partition_tbl_boot_sig.dat > $file
-	rm -f ${file}.ipl
+	dd if=/dev/urandom of=$file bs=1 count=$GENE_LEN
+	cat mbr_partition_tbl_boot_sig.dat >> $file
 }
 
 initialization() {
