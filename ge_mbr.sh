@@ -52,6 +52,7 @@ evaluation() {
 		echo ">>>>> $ch"
 
 		cp $ch floppy.img
+		cp $ch hdd.img
 		$MBR_TESTER
 		exit_code=$?
 		case $exit_code in
@@ -80,7 +81,7 @@ evaluation() {
 	# 第2列で降順にソート
 	sort -n -r -k 2 -t ',' tmp.csv > ${WORK_DIR}/now/evaluation_value_list.csv
 
-	rm -f floppy.img tmp.csv
+	rm -f floppy.img hdd.img tmp.csv
 
 	echo
 	echo
