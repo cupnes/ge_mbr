@@ -54,17 +54,13 @@ evaluation() {
 		cp $ch floppy.img
 		cp $ch hdd.img
 		pixel_num=$($MBR_TESTER | grep '^pixel_num=' | cut -d'=' -f2)
-		exit_code=$?
-		case $exit_code in
-		0)
+		if [ -n "${pixel_num}" ]; then
 			evaluation_value=$pixel_num
 			echo "$ch gets pixels."
-			;;
-		*)
+		else
 			evaluation_value=0
 			echo "$ch is dead."
-			;;
-		esac
+		fi
 
 		echo "ch_$i.dat,${evaluation_value}" >> tmp.csv
 		echo "evaluation_value=${evaluation_value}"
