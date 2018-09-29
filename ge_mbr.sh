@@ -246,7 +246,7 @@ feedback() {
 	echo
 
 	# 上位50%の個体を候補に、同数の個体をnextへ追加
-	# (一様交叉を使用)
+	# (部分交叉を使用)
 	echo '>>>>>>> Crossover'
 	max_cross_times=$((candidates_num / 2))
 	for cross_times in $(seq 0 $((max_cross_times - 1))); do
