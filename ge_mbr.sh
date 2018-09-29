@@ -245,17 +245,17 @@ feedback() {
 
 	echo
 
-	# 上位50%の個体を候補に、同数の個体をnextへ追加
+	# (candidates_num / 2)回の交叉を行い、candidates_num個の子をnextへ
 	# (部分交叉を使用)
 	echo '>>>>>>> Crossover'
 	max_cross_times=$((candidates_num / 2))
 	for cross_times in $(seq 0 $((max_cross_times - 1))); do
 		echo "cross_times=${cross_times}"
 
-		chA_idx=$(((RANDOM % candidates_num) + 1))
+		chA_idx=$(((RANDOM % POPULATION_SIZE) + 1))
 		chB_idx=${chA_idx}
 		while [ ${chB_idx} -eq ${chA_idx} ]; do
-			chB_idx=$(((RANDOM % candidates_num) + 1))
+			chB_idx=$(((RANDOM % POPULATION_SIZE) + 1))
 		done
 		echo "chA_idx=${chA_idx} , chB_idx=${chB_idx}"
 
